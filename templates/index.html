@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="UTF-8">
+    <title>WE674 Class Project</title>
+    {% include "_head_script.html" %}
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header class="bg-black">
+        <div class="container">
+            {% include "_nav_menu.html" %}
+        </div>
+    </header>
+
+    <main class="flex-shrink-0 mt-5">
+        <div class="container">
+            {% include "_intro.html" %}
+
+            <h3>Personal Data</h3>
+            <div class="py-3">
+                <a href="/add_person" class="btn btn-primary"><i class="bi bi-person-plus"></i> Add Person</a>
+                <a href="/face_recognition" class="btn btn-warning"><i class="bi bi-aspect-ratio"></i> Face
+                    Recognition</a>
+            </div>
+            <table class="table table-bordered">
+                <thead>
+                    <tr class="text-center">
+                        <th>No.</th>
+                        <th>Name</th>
+                        <th>Created Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in data %}
+                    <tr>
+                        <td class="text-center">{{ u[0] }}</td>
+                        <td>{{ u[1] }}</td>
+                        <td class="text-center">{{ u[2] }}</td>
+                        <td class="text-center"><a href="/create_dataset/{{ u[0] }}"
+                                class="btn btn-sm btn-success">Genarate Dataset</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </main>
+
+    <footer class="footer mt-auto py-3">
+        <div class="container">
+            <span class="text-light">&copy; WE674</span>
+        </div>
+    </footer>
+    {% include "_footer_script.html" %}
+</body>
+
+</html>

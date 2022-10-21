@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="UTF-8">
+    <title>WE674 Class Project</title>
+    {% include "_head_script.html" %}
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header class="bg-black">
+        <div class="container">
+            {% include "_nav_menu.html" %}
+        </div>
+    </header>
+
+    <main class="flex-shrink-0 mt-5">
+        <div class="container">
+            {% include "_intro.html" %}
+
+            <div class="text-center">
+                <h3>Generate Dataset</h3>
+                <img src="{{ url_for('stream_dataset', pid=pid) }}" class="w-25 img-thumbnail">
+                <div class="my-3">
+                    <a href="/train_classifier/{{ pid }}" class="btn btn-success">Continute</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer mt-auto py-3">
+        <div class="container">
+            <span class="text-light">&copy; WE674</span>
+        </div>
+    </footer>
+    {% include "_footer_script.html" %}
+</body>
+
+</html>
