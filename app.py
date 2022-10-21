@@ -13,7 +13,7 @@ app = Flask(__name__)
 conn = mysql.connector.connect(
     host="localhost",
     user="root",
-    passwd="",
+    passwd="1234",
     database="we674_db"
 )
 cursor = conn.cursor()
@@ -57,6 +57,8 @@ def generate_dataset(pid):
             yield b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
             if cv2.waitKey(1) == 13 or int(img_id) == int(max_id):
                 playsound(r'static\\sounds\\success-sound-effect.mp3', True)
+                cap.release()
+                cv2.destroyAllWindows()
                 break
 
 def get_face_recognition():
@@ -94,6 +96,8 @@ def get_face_recognition():
         stream = cv2.imencode('.jpeg', _img)[1].tobytes()
         yield b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + stream + b'\r\n'
         if cv2.waitKey(1) == 27:
+            videoCapture.release()
+            cv2.destroyAllWindows()
             break
     else:
         print("camera not streaming.")
