@@ -22,7 +22,7 @@
 <br />
 
 ### ลิงก์ที่เกี่ยวข้อง
-* mysql ผมใช้ตัวที่มากับ [xampp](https://link-url-here.org) ผ่าน phpmyadmin
+* mysql ผมใช้ตัวที่มากับ [xampp](https://www.apachefriends.org/download.html) ผ่าน phpmyadmin
 * [Flask](https://pypi.org/project/Flask/)
 * [opencv-python](https://pypi.org/project/opencv-python/)
 * [Pillow](https://pypi.org/project/Pillow/)
