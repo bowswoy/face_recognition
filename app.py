@@ -5,7 +5,6 @@ from PIL import Image
 import numpy as np
 import os
 from playsound import playsound
-import face_recognition
 
 ###################### init flask app ######################
 app = Flask(__name__)
@@ -18,6 +17,11 @@ conn = mysql.connector.connect(
     database="we674_db"
 )
 cursor = conn.cursor()
+
+###################### global variable ######################
+count = 0
+pause_count = 0
+scanned = False
 
 ###################### function zone ######################
 def generate_dataset(pid):
@@ -77,10 +81,8 @@ def get_face_recognition():
     def draw_boundary(img, classifier, scaleFactor, minNeighbors, color, _, clf):
         gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         features = classifier.detectMultiScale(gray_image, scaleFactor, minNeighbors)
-        coords = []
         for top, right, bottom, left in features:
             cv2.rectangle(img, (top, right), (top + bottom, right + left), color, 2)
-
             cv2.rectangle(img, (top - 1, right + left), (top + 1 + bottom, right + left + 20), color, cv2.FILLED)
             id, pred = clf.predict(gray_image[right:right + left, top:top + bottom])
             confidence = int(100 * (1 - pred / 300))
@@ -92,9 +94,8 @@ def get_face_recognition():
                 label = name + " (" + str(confidence) + "%)"
                 cv2.putText(img, label, (top + 4, right + left + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,255,255), 1, cv2.LINE_AA)
             else:
-                cv2.putText(img, "UNKNOWN", (top + 4, right + left + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,255,255), 1, cv2.LINE_AA)
-            coords = [top, right, bottom, left]
-        return coords
+                cv2.putText(img, "Unknown", (top + 4, right + left + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,255,255), 1, cv2.LINE_AA)
+        return True
 
     def recognize(img, clf, faceCascade):
         draw_boundary(img, faceCascade, 1.1, 10, (26, 174, 10), "Face", clf)
@@ -116,6 +117,73 @@ def get_face_recognition():
             break
     else:
         print("camera not streaming.")
+
+def get_face_check_in():
+    def draw_boundary(img, classifier, scaleFactor, minNeighbors, color, _, clf):
+        global pause_count
+        global scanned
+
+        pause_count += 1
+
+        gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        features = classifier.detectMultiScale(gray_image, scaleFactor, minNeighbors)
+        
+        for top, right, bottom, left in features:
+            cv2.rectangle(img, (top, right), (top + bottom, right + left), color, 2)
+            id, pred = clf.predict(gray_image[right:right + left, top:top + bottom])
+            cursor.execute("SELECT p.p_id, p.p_name FROM img_dataset AS i LEFT JOIN person_data AS p ON i.img_person = p.p_id WHERE i.img_id = " + str(id))
+            row = cursor.fetchone()
+            uid = row[0]
+            uname = row[1]
+            confidence = int(100 * (1 - pred / 300))
+            if confidence > 70 and not scanned:
+                global count
+                count += 1
+                n = (100 / 15) * count
+                w_filled = (count / 15) * bottom
+                cv2.rectangle(img, (top - 1, right + left), (top + 1 + int(w_filled), right + left + 20), color, cv2.FILLED)
+                cv2.putText(img, str(int(n))+' %', (top + 4, right + left + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,255,255), 1, cv2.LINE_AA)
+
+                if int(count) == 15:
+                    count = 0
+                    cursor.execute("INSERT INTO check_in(p_id) VALUES({})".format(uid))
+                    conn.commit()
+                    scanned = True
+                    pause_count = 0
+            else:
+                if not scanned:
+                    cv2.rectangle(img, (top - 1, right + left), (top + 1 + bottom, right + left + 20), color, cv2.FILLED)
+                    cv2.putText(img, "Unknown", (top + 4, right + left + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,255,255), 1, cv2.LINE_AA)
+                else:
+                    cv2.rectangle(img, (top - 1, right + left), (top + 1 + bottom, right + left + 20), color, cv2.FILLED)
+                    cv2.putText(img, str(uname) + ": Checked in", (top + 4, right + left + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,255,255), 1, cv2.LINE_AA)
+                    
+                    deylay = 100
+                    if pause_count > deylay: # delay
+                        scanned = False
+        return True
+
+    def recognize(img, clf, faceCascade):
+        draw_boundary(img, faceCascade, 1.1, 10, (26, 174, 10), "Face", clf)
+        return img
+
+    faceCascade = cv2.CascadeClassifier("resources/haarcascade_frontalface_default.xml")
+    clf = cv2.face.LBPHFaceRecognizer_create()
+    clf.read("resources/classifier.xml")
+
+    videoCapture = cv2.VideoCapture(0)
+    while videoCapture.isOpened():
+        _, frame = videoCapture.read()
+        _img = recognize(frame, clf, faceCascade)
+        stream = cv2.imencode('.jpeg', _img)[1].tobytes()
+        yield b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + stream + b'\r\n'
+        if cv2.waitKey(1) == 27:
+            videoCapture.release()
+            cv2.destroyAllWindows()
+            break
+    else:
+        print("camera not streaming.")
+
 
 ###################### route zone ######################
 @app.route('/')
@@ -157,8 +225,8 @@ def create_dataset(pid):
     return render_template('create_dataset.html', pid=pid)
 
 
-@app.route('/train_classifier/<pid>')
-def train_classifier(pid):
+@app.route('/train_classifier')
+def train_classifier():
     dataset_dir = "dataset"
     path = [os.path.join(dataset_dir, f) for f in os.listdir(dataset_dir)]
     faces = []
@@ -185,6 +253,15 @@ def face_recognition_feed():
 def face_recognition():
     return render_template('face_recognition.html')
 
+
+@app.route('/check_in_feed')
+def check_in_feed():
+    return Response(get_face_check_in(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/check_in')
+def check_in():
+    return render_template('check_in.html')
 
 ###################### start local server ######################
 if __name__ == '__main__':

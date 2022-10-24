@@ -20,9 +20,7 @@
 
             <h3>Personal Data</h3>
             <div class="py-3">
-                <a href="/add_person" class="btn btn-primary"><i class="bi bi-person-plus"></i> Add Person</a>
-                <a href="/face_recognition" class="btn btn-warning"><i class="bi bi-aspect-ratio"></i> Face
-                    Recognition</a>
+                <a href="/add_person" class="btn btn-warning"><i class="bi bi-person-plus"></i> Add Person</a>
             </div>
             <table class="table table-bordered">
                 <thead>
@@ -39,8 +37,10 @@
                         <td class="text-center">{{ u[0] }}</td>
                         <td>{{ u[1] }}</td>
                         <td class="text-center">{{ u[2] }}</td>
-                        <td class="text-center"><a href="/create_dataset/{{ u[0] }}"
-                                class="btn btn-sm btn-success">Add Dataset</a></td>
+                        <td class="text-center">
+                            <a href="/create_dataset/{{ u[0] }}" class="btn btn-sm btn-info">Add
+                                Dataset</a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

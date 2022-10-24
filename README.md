@@ -1,6 +1,6 @@
 # WE674 Class Project
 
-## Python กับ OpenCV ดึงฐานข้อมูล Face Recognition จาก MySQL
+Python กับ OpenCV ดึงฐานข้อมูล Face Recognition จาก MySQL
 <br />
 
 ![thumbnail](thumbnail.png)
@@ -18,8 +18,6 @@
 4. สร้าง folder ชื่อ ```dataset``` ไว้ที่เดียวกับไฟล์ app.py
 5. สั่ง run โดยคลิกปุ่ม run หรือผ่าน command ```python3 app.py```
 6. หากไม่พบข้อผิดพลาด ก็สามารถเปิดเข้าไปที่ http://127.0.0.1:5000 เพื่อใช้งานได้เลย
-<br />
-<br />
 
 ### ลิงก์ที่เกี่ยวข้อง
 * mysql ผมใช้ตัวที่มากับ [xampp](https://www.apachefriends.org/download.html) ผ่าน phpmyadmin
