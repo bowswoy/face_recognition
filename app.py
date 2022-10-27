@@ -39,10 +39,10 @@ def generate_dataset(pid):
             return None
         for top, right, bottom, left in faces:
             cropped_face = img[right:right + left, top:top + bottom]
-            cv2.rectangle(img, (top, right), (top + bottom,
-                          right + left), (26, 174, 10), 2)
-            cv2.putText(img, "Scanning..", (top + 4, right + left + 14),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (26, 174, 10), 1, cv2.LINE_AA)
+            # cv2.rectangle(img, (top, right), (top + bottom,
+            #               right + left), (26, 174, 10), 2)
+            # cv2.putText(img, "Scanning..", (top + 4, right + left + 14),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (26, 174, 10), 2, cv2.LINE_AA)
         return cropped_face
 
     cap = cv2.VideoCapture(0)
@@ -73,9 +73,9 @@ def generate_dataset(pid):
                 cv2.rectangle(img, (top, right), (top + bottom,
                               right + left), (26, 174, 10), 2)
                 cv2.rectangle(img, (top - 1, right + left), (top + 1 +
-                              bottom, right + left + 20), (26, 174, 10), cv2.FILLED)
+                          bottom, right + left + 40), (26, 174, 10), cv2.FILLED)
                 cv2.putText(img, "Scanning.. " + str(count_img) + "%", (top + 4, right +
-                            left + 14), cv2.FONT_HERSHEY_DUPLEX, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
+                            left + 28), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
                 # insert to db
                 cursor.execute(
                     """INSERT INTO `img_dataset`(`img_id`, `img_person`) VALUES('{}', '{}')""".format(img_id, pid))
@@ -90,36 +90,6 @@ def generate_dataset(pid):
 
 
 def get_face_recognition():
-    # def draw_boundary(img, classifier, scaleFactor, minNeighbors, color, _, clf):
-    #     gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #     features = classifier.detectMultiScale(
-    #         gray_image, scaleFactor, minNeighbors)
-    #     for top, right, bottom, left in features:
-    #         cv2.rectangle(img, (top, right),
-    #                       (top + bottom, right + left), color, 2)
-    #         cv2.rectangle(img, (top - 1, right + left), (top +
-    #                       1 + bottom, right + left + 20), color, cv2.FILLED)
-    #         id, pred = clf.predict(
-    #             gray_image[right:right + left, top:top + bottom])
-    #         confidence = int(100 * (1 - pred / 300))
-    #         cursor.execute(
-    #             "SELECT p.p_name FROM img_dataset AS i LEFT JOIN person_data AS p ON i.img_person = p.p_id WHERE i.img_id = " + str(id))
-    #         name = cursor.fetchone()
-    #         if name is not None:
-    #             name = ''.join(name)
-    #         if confidence > 70:
-    #             label = name + " (" + str(confidence) + "%)"
-    #             cv2.putText(img, label, (top + 4, right + left + 14),
-    #                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
-    #         else:
-    #             cv2.putText(img, "Unknown", (top + 4, right + left + 14),
-    #                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
-    #     return True
-
-    # def recognize(img, clf, faceCascade):
-    #     draw_boundary(img, faceCascade, 1.1, 10, (26, 174, 10), "Face", clf)
-    #     return img
-
     faceCascade = cv2.CascadeClassifier(
         "resources/haarcascade_frontalface_default.xml")
     clf = cv2.face.LBPHFaceRecognizer_create()
@@ -345,6 +315,14 @@ def check_in_feed():
 @app.route('/check_in')
 def check_in():
     return render_template('check_in.html')
+
+
+@app.route('/list_check_in')
+def list_check_in():
+    cursor.execute(
+        "SELECT p.p_name, MIN(c.c_datetime) AS f_time, MAX(c.c_datetime) AS l_time FROM check_in AS c LEFT JOIN person_data AS p ON(c.p_id = p.p_id) WHERE DATE(c.c_datetime) = CURDATE()")
+    data = cursor.fetchall()
+    return render_template('list_check_in.html', data=data)
 
 
 ###################### start local server ######################

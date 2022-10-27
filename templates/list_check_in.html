@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="UTF-8">
+    <title>WE674 Class Project</title>
+    {% include "_head_script.html" %}
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header class="bg-black">
+        <div class="container">
+            {% include "_nav_menu.html" %}
+        </div>
+    </header>
+
+    <main class="flex-shrink-0 mt-5">
+        <div class="container">
+            {% include "_intro.html" %}
+
+            <h3>Today Check-in</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr class="text-center">
+                        <th>Name</th>
+                        <th>First</th>
+                        <th>Last</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in data %}
+                    <tr>
+                        <td class="text-center">{{ u[0] }}</td>
+                        <td class="text-center">{{ u[1].strftime('%d/%m/%Y %X') }}</td>
+                        <td class="text-center">{{ u[2].strftime('%d/%m/%Y %X') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </main>
+
+    <footer class="footer mt-auto py-3">
+        <div class="container">
+            <span class="text-light">&copy; WE674</span>
+        </div>
+    </footer>
+    {% include "_footer_script.html" %}
+</body>
+
+</html>
