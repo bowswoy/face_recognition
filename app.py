@@ -35,14 +35,11 @@ def generate_dataset(pid):
     def face_cropped(img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         faces = face_classifier.detectMultiScale(gray, 1.3, 5)
-        if faces == ():
+        if faces is None:
             return None
+        cropped_face = None
         for top, right, bottom, left in faces:
             cropped_face = img[right:right + left, top:top + bottom]
-            # cv2.rectangle(img, (top, right), (top + bottom,
-            #               right + left), (26, 174, 10), 2)
-            # cv2.putText(img, "Scanning..", (top + 4, right + left + 14),
-            #             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (26, 174, 10), 2, cv2.LINE_AA)
         return cropped_face
 
     cap = cv2.VideoCapture(0)
@@ -54,39 +51,59 @@ def generate_dataset(pid):
     max_id = img_id + 100
     count_img = 0
 
+    delay = 0
+    time.sleep(1.5)
+    playsound('static/sounds/before-scan.mp3', False)
+    cropped_face = None
     while True:
         _, img = cap.read()
-        if img == ():
+        if img is None:
             return None
+
+        delay += 1
+        
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         faces = face_classifier.detectMultiScale(gray, 1.3, 5)
         for top, right, bottom, left in faces:
             cropped_face = img[right:right + left, top:top + bottom]
 
             if cropped_face is not None:
-                count_img += 1
-                img_id += 1
-                face = cv2.resize(face_cropped(img), (250, 250))
-                face_gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
-                file_name_path = "dataset/" + pid + "." + str(img_id) + ".jpg"
-                cv2.imwrite(file_name_path, face_gray)
-                cv2.rectangle(img, (top, right), (top + bottom,
-                              right + left), (26, 174, 10), 2)
-                cv2.rectangle(img, (top - 1, right + left), (top + 1 +
-                          bottom, right + left + 40), (26, 174, 10), cv2.FILLED)
-                cv2.putText(img, "Scanning.. " + str(count_img) + "%", (top + 4, right +
-                            left + 28), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
-                # insert to db
-                cursor.execute(
-                    """INSERT INTO `img_dataset`(`img_id`, `img_person`) VALUES('{}', '{}')""".format(img_id, pid))
-                conn.commit()
-                frame = cv2.imencode('.jpeg', img)[1].tobytes()
-                yield b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
-                if cv2.waitKey(1) == 13 or int(img_id) == int(max_id):
-                    playsound('static/sounds/success-sound-effect.mp3', True)
-                    cap.release()
-                    cv2.destroyAllWindows()
-                    break
+
+                cv2.rectangle(img, (top, right), (top + bottom, right + left), (26, 174, 10), 2)
+                cv2.rectangle(img, (top - 1, right + left), (top + 1 + bottom, right + left + 40), (26, 174, 10), cv2.FILLED)
+
+                if delay >= 50:
+                    count_img += 1
+                    img_id += 1
+                    face = cv2.resize(face_cropped(img), (250, 250))
+                    face_gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+                    file_name_path = "dataset/" + pid + "." + str(img_id) + ".jpg"
+                    cv2.imwrite(file_name_path, face_gray)
+                    if count_img < 100:
+                        cv2.putText(img, "Scanning.. " + str(count_img) + "%", (top + 4, right + left + 28), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
+                    else:
+                        cv2.putText(img, "Complete", (top + 4, right + left + 28), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
+                    # insert to db
+                    cursor.execute("""INSERT INTO `img_dataset`(`img_id`, `img_person`) VALUES('{}', '{}')""".format(img_id, pid))
+                    conn.commit()
+                    frame = cv2.imencode('.jpeg', img)[1].tobytes()
+                    yield b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
+                    if cv2.waitKey(1) == 13 or int(img_id) == int(max_id):
+                        delay = 0
+                        cap.release()
+                        cv2.destroyAllWindows()
+                        playsound('static/sounds/success-sound-effect.mp3', True)
+                        playsound('static/sounds/scan-success.mp3', True)
+                        playsound('static/sounds/complete.mp3', False)
+                        break
+                else:
+                    cv2.putText(img, "Preparing.. ", (top + 4, right + left + 28), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
+                    frame = cv2.imencode('.jpeg', img)[1].tobytes()
+                    yield b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
+                    if cv2.waitKey(1) == 13:
+                        cap.release()
+                        cv2.destroyAllWindows()
+                        break
 
 
 def get_face_recognition():
@@ -144,6 +161,7 @@ def get_face_check_in():
     mpDrawingStyles = mp.solutions.drawing_styles
 
     i = 0
+    c = 0
     while videoCapture.isOpened():
         _, image = videoCapture.read()
         imageRGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -183,6 +201,14 @@ def get_face_check_in():
                     mpDrawingStyles.get_default_hand_landmarks_style(),
                     mpDrawingStyles.get_default_hand_connections_style()
                 )
+            c += 1
+            # cv2.putText(
+            #     image,
+            #     str(c), (500, 100),
+            #     cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 10
+            # )
+        else:
+            c = 0
 
         gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         features = faceCascade.detectMultiScale(gray_image, 1.3, 5)
@@ -203,7 +229,7 @@ def get_face_check_in():
                 label = uname + " (" + str(confidence) + "%)"
                 cv2.putText(image, label, (top + 4, right + left + 28),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
-                if fingerCount == 5:
+                if fingerCount == 5 and c <= 30:
                     status = 'Checking in...'
                     i += 1
                     loading = (i / 15) * bottom
@@ -211,12 +237,12 @@ def get_face_check_in():
                                   int(loading), right + left + 50), (0, 255, 255), cv2.FILLED)
                     if i == 15:
                         i = 0
-                        cursor.execute(
-                            "INSERT INTO check_in(p_id) VALUES({})".format(uid))
+                        c = 31
+                        cursor.execute("INSERT INTO check_in(p_id) VALUES({})".format(uid))
                         conn.commit()
                         status = 'Success'
-                        playsound(
-                            'static/sounds/success-sound-effect.mp3', True)
+                        playsound('static/sounds/success-sound-effect.mp3', False)
+                        playsound('static/sounds/success.mp3', False)
 
                     cv2.putText(image, status, (top, right - 5),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
@@ -320,11 +346,11 @@ def check_in():
 @app.route('/list_check_in')
 def list_check_in():
     cursor.execute(
-        "SELECT p.p_name, MIN(c.c_datetime) AS f_time, MAX(c.c_datetime) AS l_time FROM check_in AS c LEFT JOIN person_data AS p ON(c.p_id = p.p_id) WHERE DATE(c.c_datetime) = CURDATE()")
+        "SELECT p.p_name, MIN(c.c_datetime) AS f_time, MAX(c.c_datetime) AS l_time FROM check_in AS c LEFT JOIN person_data AS p ON(c.p_id = p.p_id) WHERE DATE(c.c_datetime) = CURDATE() GROUP BY c.p_id ORDER BY c.c_datetime ASC")
     data = cursor.fetchall()
     return render_template('list_check_in.html', data=data)
 
 
 ###################### start local server ######################
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='127.0.0.1',debug=True)
