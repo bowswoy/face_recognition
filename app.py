@@ -15,7 +15,7 @@ app = Flask(__name__)
 conn = mysql.connector.connect(
     host="localhost",
     user="root",
-    passwd="1234",
+    passwd="",
     database="we674_db"
 )
 cursor = conn.cursor()
@@ -31,16 +31,6 @@ scanned = False
 def generate_dataset(pid):
     face_classifier = cv2.CascadeClassifier(
         "resources/haarcascade_frontalface_default.xml")
-
-    def face_cropped(img):
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_classifier.detectMultiScale(gray, 1.3, 5)
-        if faces is None:
-            return None
-        cropped_face = None
-        for top, right, bottom, left in faces:
-            cropped_face = img[right:right + left, top:top + bottom]
-        return cropped_face
 
     cap = cv2.VideoCapture(0)
 
@@ -75,7 +65,7 @@ def generate_dataset(pid):
                 if delay >= 50:
                     count_img += 1
                     img_id += 1
-                    face = cv2.resize(face_cropped(img), (250, 250))
+                    face = cv2.resize(cropped_face, (250, 250))
                     face_gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
                     file_name_path = "dataset/" + pid + "." + str(img_id) + ".jpg"
                     cv2.imwrite(file_name_path, face_gray)
