@@ -83,7 +83,7 @@ def generate_dataset(pid):
                         cap.release()
                         cv2.destroyAllWindows()
                         playsound('static/sounds/success-sound-effect.mp3', True)
-                        playsound('static/sounds/scan-success.mp3', True)
+                        playsound('static/sounds/scan-success.mp3', False)
                         playsound('static/sounds/complete.mp3', False)
                         break
                 else:
