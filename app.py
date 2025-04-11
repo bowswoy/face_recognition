@@ -82,9 +82,9 @@ def generate_dataset(pid):
                         delay = 0
                         cap.release()
                         cv2.destroyAllWindows()
-                        playsound('static/sounds/success-sound-effect.mp3', True)
+                        playsound('static/sounds/success-sound-effect.mp3', False)
                         playsound('static/sounds/scan-success.mp3', False)
-                        playsound('static/sounds/complete.mp3', False)
+                        # playsound('static/sounds/complete.mp3', False)
                         break
                 else:
                     cv2.putText(img, "Preparing.. ", (top + 4, right + left + 28), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
